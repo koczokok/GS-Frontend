@@ -3,8 +3,6 @@ package org.example.Entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
-
 @Entity
 @Table(name = "users")
 @Data
@@ -18,18 +16,11 @@ public class User {
 
     private String email;
     private String password;
-    private String role; // USER / ADMIN
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private UserProfile profile;
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role role;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<HackathonApplication> applications;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Submission> submissions;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<TodoItem> todos;
+    private String team;
 }
 

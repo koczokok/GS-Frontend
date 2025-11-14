@@ -2,7 +2,7 @@ package org.example.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "todo_items")
@@ -17,9 +17,13 @@ public class TodoItem {
 
     private String text;
     private Boolean done;
-    private LocalDateTime deadline;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deadline;
+
+    private Long userId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "challenge_id")
+    private Challenge challenge;
 }

@@ -4,19 +4,16 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "user_profiles")
+@Table(name = "evaluation_metrics")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfile {
+public class EvaluationMetric {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String bio;
-
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private String metric;
+    private Long userId;
 }
