@@ -1,0 +1,36 @@
+# Development overrides for docker-compose.yml
+# This file is automatically merged with docker-compose.yml when running docker-compose
+
+version: '3.8'
+
+services:
+  # Development overrides for backend
+  backend:
+    environment:
+      # Enable hot reloading and development features
+      SPRING_DEVTOOLS_RESTART_ENABLED: true
+      SPRING_DEVTOOLS_LIVERELOAD_ENABLED: true
+      LOGGING_LEVEL_COM_GS: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: DEBUG
+    volumes:
+      # Mount source code for hot reloading
+      - ./Backend/Backend/src:/app/src:cached
+
+  # Development overrides for frontend
+  frontend:
+    environment:
+      # Enable React Fast Refresh
+      CHOKIDAR_USEPOLLING: true
+      WATCHPACK_POLLING: true
+    volumes:
+      # Mount source code for hot reloading
+      - ./Frontend/src:/app/src:cached
+      - ./Frontend/public:/app/public:cached
+      - ./Frontend/package.json:/app/package.json:cached
+      - ./Frontend/package-lock.json:/app/package-lock.json:cached
+
+  # Development overrides for database
+  postgres:
+    ports:
+      # Expose database port for local development tools
+      - "${DATABASE_PORT:-5432}:5432"
