@@ -28,6 +28,6 @@ public class Submission {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "task_id")
-    private Task task;
+    @JoinColumn(name = "challenge_id")
+    private Challenge challenge;
 }

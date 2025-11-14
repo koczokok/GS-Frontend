@@ -1,9 +1,9 @@
 package org.example.Entities;
 
-import lombok.NoArgsConstructor;
-
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -17,8 +17,19 @@ public class User {
     private Long id;
 
     private String email;
-
     private String password;
+    private String role; // USER / ADMIN
 
-    private String role;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserProfile profile;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<HackathonApplication> applications;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Submission> submissions;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<TodoItem> todos;
 }
+

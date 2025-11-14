@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "hackathons")
+@Table(name = "hackathon")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,7 +25,7 @@ public class Hackathon {
     private LocalDateTime endTime;
 
     @OneToMany(mappedBy = "hackathon", cascade = CascadeType.ALL)
-    private List<Task> tasks;
+    private List<Challenge> challenges;
 
     @OneToMany(mappedBy = "hackathon", cascade = CascadeType.ALL)
     private List<HackathonApplication> applications;

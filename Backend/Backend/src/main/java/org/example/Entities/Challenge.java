@@ -5,11 +5,11 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "tasks")
+@Table(name = "challenges")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task {
+public class Challenge {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,12 +20,12 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private Integer orderIndex;
+    private Integer orderIndex; // opcjonalnie, żeby sortować wyświetlanie
 
     @ManyToOne
     @JoinColumn(name = "hackathon_id")
     private Hackathon hackathon;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "challenge", cascade = CascadeType.ALL)
     private List<Submission> submissions;
 }
