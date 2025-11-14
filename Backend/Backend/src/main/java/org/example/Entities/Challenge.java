@@ -2,7 +2,7 @@ package org.example.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
+import java.util.Date;
 
 @Entity
 @Table(name = "challenges")
@@ -16,16 +16,11 @@ public class Challenge {
     private Long id;
 
     private String title;
-
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String rules;
 
-    private Integer orderIndex; // opcjonalnie, żeby sortować wyświetlanie
-
-    @ManyToOne
-    @JoinColumn(name = "hackathon_id")
-    private Hackathon hackathon;
-
-    @OneToMany(mappedBy = "challenge", cascade = CascadeType.ALL)
-    private List<Submission> submissions;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deadline;
 }

@@ -4,19 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "user_profiles")
+@Table(name = "roles")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfile {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String bio;
-
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private String role; // np. "ADMIN", "PARTICIPANT", "MENTOR"
 }

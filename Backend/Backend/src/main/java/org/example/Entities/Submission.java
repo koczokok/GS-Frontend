@@ -2,7 +2,7 @@ package org.example.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "submissions")
@@ -15,19 +15,17 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String fileUrl;
-    private String comment;
+    private Integer score;
+    private String feedback;
 
-    private Integer adminScore;
-    private String adminComment;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date submissionDate;
 
-    private LocalDateTime submittedAt;
+    private String fileName;
+    private String fileExtension;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Lob
+    private byte[] file;
 
-    @ManyToOne
-    @JoinColumn(name = "challenge_id")
-    private Challenge challenge;
+    private Long challengeId;
 }
