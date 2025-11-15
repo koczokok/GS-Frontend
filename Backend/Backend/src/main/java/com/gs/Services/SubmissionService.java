@@ -11,9 +11,11 @@ import java.util.Optional;
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
+    private final ChallengeService challengeService;
 
-    public SubmissionService(SubmissionRepository submissionRepository) {
+    public SubmissionService(SubmissionRepository submissionRepository, ChallengeService challengeService) {
         this.submissionRepository = submissionRepository;
+        this.challengeService = challengeService;
     }
 
     public List<Submission> getAllSubmissions() {
@@ -32,11 +34,31 @@ public class SubmissionService {
         return submissionRepository.findByUser_Id(userId);
     }
 
-    public Submission saveSubmission(Submission submission) {
-        return submissionRepository.save(submission);
-    }
+//    public Submission saveSubmission(Submission submission) {
+//        return submissionRepository.save(submission);
+//    }
 
     public void deleteSubmission(Long id) {
         submissionRepository.deleteById(id);
     }
+
+    public Submission handleSubmission(MultipartFile file, Long challengeId) throws IOException {
+
+        Optional<Challenge> challenge = challengeService.getChallengeById(challengeId);
+
+        Submission submission = new Submission();
+        submission.setSubmissionDate(LocalDateTime.now());
+        submission.setFile(file.getBytes());
+        submission.setFileName(file.getOriginalFilename());
+
+
+
+        double score = Metrics.getEnumFromMetric(challenge.get().getMetric()).calculate(submission.getFile(), challenge.get().getGroundSourceFile());
+        submission.setScore(score);
+
+        submissionRepository.save(submission);
+        return submission;
+    }
+
+
 }
