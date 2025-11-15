@@ -197,7 +197,15 @@ node_modules
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# Environment variables
+# Allow example files first (negation must come before broader patterns)
+!.env.example
+!.env.local.example
+!.env.development.example
+!.env.test.example
+!.env.production.example
+
+# Then ignore actual environment files
 .env
 .env.local
 .env.development.local
