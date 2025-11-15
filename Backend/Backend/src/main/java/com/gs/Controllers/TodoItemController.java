@@ -45,6 +45,24 @@ public class TodoItemController {
         return todoService.saveTodo(todo);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TodoItem> updateTodo(@PathVariable Long id, @RequestBody TodoItem todo) {
+        return todoService.getTodoById(id)
+                .map(existingTodo -> {
+                    if (todo.getText() != null) {
+                        existingTodo.setText(todo.getText());
+                    }
+                    if (todo.getDone() != null) {
+                        existingTodo.setDone(todo.getDone());
+                    }
+                    if (todo.getDeadline() != null) {
+                        existingTodo.setDeadline(todo.getDeadline());
+                    }
+                    return ResponseEntity.ok(todoService.saveTodo(existingTodo));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public void deleteTodo(@PathVariable Long id) {
         todoService.deleteTodo(id);

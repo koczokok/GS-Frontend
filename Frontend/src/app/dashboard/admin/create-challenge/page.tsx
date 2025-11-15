@@ -33,24 +33,36 @@ export default function CreateChallengePage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const { createChallenge } = await import("@/lib/api");
+      
+      await createChallenge({
+        title: formData.title,
+        description: formData.description,
+        rules: formData.rules,
+        deadline: new Date(formData.deadline).toISOString(),
+      });
 
-    setIsSubmitting(false);
-    setSuccess(true);
+      setIsSubmitting(false);
+      setSuccess(true);
 
-    // Reset form
-    setFormData({
-      title: "",
-      description: "",
-      rules: "",
-      deadline: "",
-    });
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        rules: "",
+        deadline: "",
+      });
 
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setSuccess(false);
-    }, 3000);
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setIsSubmitting(false);
+      console.error("Error creating challenge:", err);
+      // You could add error state here
+    }
   };
 
   const isFormValid = formData.title && formData.description && formData.rules && formData.deadline;

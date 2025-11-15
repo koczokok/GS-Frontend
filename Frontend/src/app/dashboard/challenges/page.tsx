@@ -1,20 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import { mockChallenges, isChallengeActive } from "@/lib/mock-data";
+import { useState, useEffect } from "react";
+import { getChallenges, getActiveChallenges, isChallengeActive, type Challenge } from "@/lib/api";
 import { ChallengeCard } from "@/components/challenge-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target } from "lucide-react";
 
 export default function ChallengesPage() {
   const [filter, setFilter] = useState<"all" | "active" | "closed">("all");
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredChallenges = mockChallenges.filter((challenge) => {
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        setLoading(true);
+        const data = await getChallenges();
+        setChallenges(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load challenges");
+        console.error("Error fetching challenges:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, []);
+
+  const filteredChallenges = challenges.filter((challenge) => {
     if (filter === "all") return true;
     if (filter === "active") return isChallengeActive(challenge);
     if (filter === "closed") return !isChallengeActive(challenge);
     return true;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading challenges...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Target className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Error loading challenges</h3>
+        <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { mockSubmissions, getChallengeById } from "@/lib/mock-data";
+import { getSubmissionById, getChallengeById, updateSubmission, type Submission, type Challenge } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,19 +21,61 @@ export default function SubmissionReviewPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [score, setScore] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submissionId = parseInt(id);
-  const submission = mockSubmissions.find((sub) => sub.id === submissionId);
 
-  if (!submission) {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const submissionData = await getSubmissionById(submissionId);
+        setSubmission(submissionData);
+
+        // Fetch challenge separately
+        const challengeData = await getChallengeById(submissionData.challengeId);
+        setChallenge(challengeData);
+
+        // Pre-fill if already scored
+        if (submissionData.score !== null) {
+          setScore(submissionData.score.toString());
+          setFeedback(submissionData.feedback || "");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load submission");
+        console.error("Error fetching submission:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [submissionId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading submission...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
         <h3 className="text-lg font-semibold mb-2">Submission not found</h3>
+        <p className="text-sm text-muted-foreground mb-4">{error || "The submission you're looking for doesn't exist"}</p>
         <Button onClick={() => router.push("/dashboard/judge/submissions")}>
           Back to Submissions
         </Button>
@@ -41,31 +83,33 @@ export default function SubmissionReviewPage({
     );
   }
 
-  const challenge = getChallengeById(submission.challengeId);
   const isAlreadyScored = submission.score !== null;
-
-  // Pre-fill if already scored
-  useState(() => {
-    if (isAlreadyScored) {
-      setScore(submission.score?.toString() || "");
-      setFeedback(submission.feedback || "");
-    }
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const scoreValue = parseInt(score);
+      if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+        throw new Error("Score must be between 0 and 100");
+      }
 
-    setIsSubmitting(false);
-    setSuccess(true);
+      await updateSubmission(submissionId, scoreValue, feedback);
 
-    // Redirect after 2 seconds
-    setTimeout(() => {
-      router.push("/dashboard/judge/submissions");
-    }, 2000);
+      setSuccess(true);
+
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/dashboard/judge/submissions");
+      }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update submission");
+      console.error("Error updating submission:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const scoreValue = parseInt(score);
@@ -84,6 +128,14 @@ export default function SubmissionReviewPage({
           Back to List
         </Button>
       </div>
+
+      {error && (
+        <Alert className="bg-destructive/10 border-destructive/50">
+          <AlertDescription className="text-destructive">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {success && (
         <Alert className="bg-green-500/10 border-green-500/50">

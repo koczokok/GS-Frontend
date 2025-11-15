@@ -44,6 +44,21 @@ public class SubmissionController {
         return submissionService.saveSubmission(submission);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Submission> updateSubmission(@PathVariable Long id, @RequestBody Submission submission) {
+        return submissionService.getSubmissionById(id)
+                .map(existingSubmission -> {
+                    if (submission.getScore() != null) {
+                        existingSubmission.setScore(submission.getScore());
+                    }
+                    if (submission.getFeedback() != null) {
+                        existingSubmission.setFeedback(submission.getFeedback());
+                    }
+                    return ResponseEntity.ok(submissionService.saveSubmission(existingSubmission));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public void deleteSubmission(@PathVariable Long id) {
         submissionService.deleteSubmission(id);

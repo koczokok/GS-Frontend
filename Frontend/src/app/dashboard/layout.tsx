@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { UserDashboard } from "@/components/user-dashboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -51,13 +52,21 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 z-50 border-r bg-background">
+      <aside className="hidden md:flex w-80 flex-col fixed inset-y-0 z-50 border-r bg-background">
         <div className="flex h-16 items-center gap-2 px-6 border-b">
           <Code2 className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg">Hackathon</span>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <DashboardNav role={userRole} />
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4">
+            <DashboardNav role={userRole} />
+          </div>
+          
+          {/* User Dashboard Section */}
+          <div className="p-4 border-t mt-4">
+            <h2 className="text-lg font-semibold mb-4">Dashboard</h2>
+            <UserDashboard />
+          </div>
         </div>
         <div className="p-4 border-t">
           <p className="text-xs text-muted-foreground mb-1">Role</p>
@@ -66,7 +75,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <div className="md:pl-64 flex-1 flex flex-col">
+      <div className="md:pl-80 flex-1 flex flex-col">
         {/* Top Bar */}
         <header className="sticky top-0 z-40 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-full items-center justify-between px-6">

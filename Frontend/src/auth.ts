@@ -44,9 +44,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (response.ok) {
             console.log("User synced with backend successfully")
-            // You can store additional data from backend response if needed
             const data = await response.json()
-            // Example: token.backendUserId = data.id
+            // Store backend user ID
+            token.userId = data.id.toString()
+            token.backendUserId = data.id
           } else {
             console.error("Failed to sync user with backend:", await response.text())
           }

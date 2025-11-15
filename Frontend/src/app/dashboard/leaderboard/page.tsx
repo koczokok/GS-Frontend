@@ -1,16 +1,48 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { calculateLeaderboard } from "@/lib/mock-data";
+import { calculateLeaderboard } from "@/lib/api";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 
 export default function LeaderboardPage() {
   const { data: session } = useSession();
-  const leaderboard = calculateLeaderboard();
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const userEntry = leaderboard.find((entry) => entry.userId === session?.userId);
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true);
+        const data = await calculateLeaderboard();
+        setLeaderboard(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load leaderboard");
+        console.error("Error fetching leaderboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading leaderboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userEntry = leaderboard.find((entry) => entry.userId === session?.userId?.toString());
 
   return (
     <div className="space-y-6">

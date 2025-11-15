@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { getUserStats } from "@/lib/mock-data";
+import { getUserById, getSubmissionsByUser, type User } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +12,75 @@ import { StatsCard } from "@/components/stats-card";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState({
+    totalSubmissions: 0,
+    averageScore: 0,
+    rank: 0,
+    completedChallenges: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  if (!session || !session.userId) {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!session?.userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userId = typeof session.userId === "string" ? parseInt(session.userId) : session.userId;
+        if (isNaN(userId)) {
+          throw new Error("Invalid user ID");
+        }
+
+        const [userData, submissionsData] = await Promise.all([
+          getUserById(userId),
+          getSubmissionsByUser(userId),
+        ]);
+
+        setUser(userData);
+
+        const scoredSubmissions = submissionsData.filter((sub) => sub.score !== null);
+        const avgScore = scoredSubmissions.length > 0
+          ? Math.round(scoredSubmissions.reduce((sum, sub) => sum + (sub.score || 0), 0) / scoredSubmissions.length)
+          : 0;
+
+        // Calculate completed challenges (challenges with at least one scored submission)
+        const completedChallengeIds = new Set(
+          scoredSubmissions.map((sub) => sub.challengeId)
+        );
+
+        setStats({
+          totalSubmissions: submissionsData.length,
+          averageScore: avgScore,
+          rank: 0, // Would need leaderboard calculation
+          completedChallenges: completedChallengeIds.size,
+        });
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
-  const stats = getUserStats(session.userId);
+  if (!session || !session.userId) {
+    return <div>Please log in to view your profile</div>;
+  }
 
   return (
     <div className="max-w-4xl space-y-6">

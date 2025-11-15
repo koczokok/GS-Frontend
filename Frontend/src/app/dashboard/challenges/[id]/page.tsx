@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { getChallengeById, getSubmissionsByChallenge, isChallengeActive } from "@/lib/mock-data";
+import { getChallengeById, getSubmissionsByChallenge, isChallengeActive, createSubmission, type Challenge, type Submission } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,18 +21,65 @@ export default function ChallengeDetailPage({
   const { id } = use(params);
   const { data: session } = useSession();
   const router = useRouter();
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const challengeId = parseInt(id);
-  const challenge = getChallengeById(challengeId);
 
-  if (!challenge) {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [challengeData, submissionsData] = await Promise.all([
+          getChallengeById(challengeId),
+          getSubmissionsByChallenge(challengeId),
+        ]);
+        
+        setChallenge(challengeData);
+        
+        // Filter user's submissions
+        if (session?.userId && typeof session.userId === "string") {
+          const userId = parseInt(session.userId);
+          if (!isNaN(userId)) {
+            const userSubs = submissionsData.filter(
+              (sub) => sub.user?.id === userId
+            );
+            setUserSubmissions(userSubs);
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load challenge");
+        console.error("Error fetching challenge:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [challengeId, session]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading challenge...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !challenge) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
         <h3 className="text-lg font-semibold mb-2">Challenge not found</h3>
+        <p className="text-sm text-muted-foreground mb-4">{error || "The challenge you're looking for doesn't exist"}</p>
         <Button onClick={() => router.push("/dashboard/challenges")}>
           Back to Challenges
         </Button>
@@ -45,25 +92,47 @@ export default function ChallengeDetailPage({
   const now = new Date();
   const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  // Get user's submissions for this challenge
-  const userSubmissions = getSubmissionsByChallenge(challengeId).filter(
-    (sub) => sub.userId === session?.userId
-  );
-
   const handleSubmit = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !session?.userId) return;
 
-    setIsSubmitting(true);
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
-    setSelectedFile(null);
+    try {
+      setIsSubmitting(true);
+      setError(null);
 
-    // Reset success message after 3 seconds
-    setTimeout(() => {
-      setSubmitSuccess(false);
-    }, 3000);
+      const userId = typeof session.userId === "string" ? parseInt(session.userId) : session.userId;
+      if (isNaN(userId)) {
+        throw new Error("Invalid user ID");
+      }
+
+      const fileName = selectedFile.name.split(".").slice(0, -1).join(".");
+      const fileExtension = selectedFile.name.split(".").pop() || "";
+
+      await createSubmission({
+        challengeId,
+        userId,
+        file: selectedFile,
+        fileName,
+        fileExtension,
+      });
+
+      setSubmitSuccess(true);
+      setSelectedFile(null);
+
+      // Refresh submissions
+      const submissionsData = await getSubmissionsByChallenge(challengeId);
+      const userSubs = submissionsData.filter((sub) => sub.user?.id === userId);
+      setUserSubmissions(userSubs);
+
+      // Reset success message after 3 seconds
+      setTimeout(() => {
+        setSubmitSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit solution");
+      console.error("Error submitting:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -128,6 +197,14 @@ export default function ChallengeDetailPage({
           <CardContent className="space-y-4">
             <FileUpload onFileSelect={setSelectedFile} />
 
+            {error && (
+              <Alert className="bg-destructive/10 border-destructive/50">
+                <AlertDescription className="text-destructive">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {submitSuccess && (
               <Alert className="bg-green-500/10 border-green-500/50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -139,7 +216,7 @@ export default function ChallengeDetailPage({
 
             <Button
               onClick={handleSubmit}
-              disabled={!selectedFile || isSubmitting}
+              disabled={!selectedFile || isSubmitting || !session?.userId}
               className="w-full"
               size="lg"
             >
@@ -170,6 +247,7 @@ export default function ChallengeDetailPage({
                   key={submission.id}
                   submission={submission}
                   showChallenge={false}
+                  challengeTitle={challenge.title}
                 />
               ))}
             </div>

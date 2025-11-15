@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { mockSubmissions, mockChallenges } from "@/lib/mock-data";
+import { getSubmissions, getChallenges, type Submission, type Challenge } from "@/lib/api";
 import {
   Table,
   TableBody,
@@ -21,8 +21,46 @@ export default function JudgeSubmissionsPage() {
   const router = useRouter();
   const [selectedChallenge, setSelectedChallenge] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredSubmissions = mockSubmissions.filter((sub) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [subsData, challengesData] = await Promise.all([
+          getSubmissions(),
+          getChallenges(),
+        ]);
+
+        setSubmissions(subsData);
+        setChallenges(challengesData);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load submissions");
+        console.error("Error fetching submissions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading submissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredSubmissions = submissions.filter((sub) => {
     if (selectedChallenge !== "all" && sub.challengeId !== parseInt(selectedChallenge)) {
       return false;
     }
@@ -35,9 +73,9 @@ export default function JudgeSubmissionsPage() {
     return true;
   });
 
-  const totalSubmissions = mockSubmissions.length;
-  const pendingSubmissions = mockSubmissions.filter((sub) => sub.score === null).length;
-  const scoredSubmissions = mockSubmissions.filter((sub) => sub.score !== null).length;
+  const totalSubmissions = submissions.length;
+  const pendingSubmissions = submissions.filter((sub) => sub.score === null).length;
+  const scoredSubmissions = submissions.filter((sub) => sub.score !== null).length;
 
   return (
     <div className="space-y-6">
@@ -91,7 +129,7 @@ export default function JudgeSubmissionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Challenges</SelectItem>
-            {mockChallenges.map((challenge) => (
+            {challenges.map((challenge) => (
               <SelectItem key={challenge.id} value={challenge.id.toString()}>
                 {challenge.title}
               </SelectItem>
@@ -144,10 +182,10 @@ export default function JudgeSubmissionsPage() {
                   {filteredSubmissions.map((submission) => (
                     <TableRow key={submission.id}>
                       <TableCell className="font-medium">
-                        {submission.userName}
+                        {submission.user?.email || "Unknown User"}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
-                        {submission.challengeTitle}
+                        {challenges.find(c => c.id === submission.challengeId)?.title || `Challenge ${submission.challengeId}`}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

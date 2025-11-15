@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { getSubmissionsByUser, mockChallenges } from "@/lib/mock-data";
+import { getSubmissionsByUser, getChallenges, type Submission, type Challenge } from "@/lib/api";
 import {
   Table,
   TableBody,
@@ -20,21 +20,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function MySubmissionsPage() {
   const { data: session } = useSession();
   const [selectedChallenge, setSelectedChallenge] = useState<string>("all");
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!session?.userId) {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!session?.userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const userId = typeof session.userId === "string" ? parseInt(session.userId) : session.userId;
+        if (isNaN(userId)) {
+          throw new Error("Invalid user ID");
+        }
+
+        const [subsData, challengesData] = await Promise.all([
+          getSubmissionsByUser(userId),
+          getChallenges(),
+        ]);
+
+        setSubmissions(subsData);
+        setChallenges(challengesData);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load submissions");
+        console.error("Error fetching submissions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading submissions...</p>
+        </div>
+      </div>
+    );
   }
 
-  const userSubmissions = getSubmissionsByUser(session.userId);
+  if (!session?.userId) {
+    return <div>Please log in to view your submissions</div>;
+  }
 
-  const filteredSubmissions = userSubmissions.filter((sub) => {
+  const filteredSubmissions = submissions.filter((sub) => {
     if (selectedChallenge === "all") return true;
     return sub.challengeId === parseInt(selectedChallenge);
   });
 
-  const totalSubmissions = userSubmissions.length;
-  const scoredSubmissions = userSubmissions.filter((sub) => sub.score !== null);
-  const pendingSubmissions = userSubmissions.filter((sub) => sub.score === null);
+  const totalSubmissions = submissions.length;
+  const scoredSubmissions = submissions.filter((sub) => sub.score !== null);
+  const pendingSubmissions = submissions.filter((sub) => sub.score === null);
   const avgScore = scoredSubmissions.length > 0
     ? Math.round(scoredSubmissions.reduce((sum, sub) => sum + (sub.score || 0), 0) / scoredSubmissions.length)
     : 0;
@@ -91,7 +137,7 @@ export default function MySubmissionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Challenges</SelectItem>
-            {mockChallenges.map((challenge) => (
+            {challenges.map((challenge) => (
               <SelectItem key={challenge.id} value={challenge.id.toString()}>
                 {challenge.title}
               </SelectItem>
@@ -135,7 +181,7 @@ export default function MySubmissionsPage() {
                   {filteredSubmissions.map((submission) => (
                     <TableRow key={submission.id}>
                       <TableCell className="font-medium">
-                        {submission.challengeTitle}
+                        {challenges.find(c => c.id === submission.challengeId)?.title || `Challenge ${submission.challengeId}`}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
