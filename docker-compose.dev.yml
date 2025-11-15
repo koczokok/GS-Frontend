@@ -1,0 +1,130 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-dev
+    env_file:
+      - .env.dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./Backend/Backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: backend-dev
+    env_file:
+      - .env.dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # Debug port for Java debugging
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Hot reload for development
+      - ./Backend/Backend/src:/app/src
+      - backend_m2:/root/.m2
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: frontend-dev
+    env_file:
+      - .env.dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      # Hot reload for development
+      - ./Frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  # PgAdmin for database management (development tool)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gs.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata_dev:
+    driver: local
+  backend_m2:
+    driver: local
+  redis_data_dev:
+    driver: local
+  pgadmin_data:
+    driver: local
