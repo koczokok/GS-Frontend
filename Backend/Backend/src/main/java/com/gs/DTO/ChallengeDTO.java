@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChallengeDTO {
-    private Long id;
+    private Long id; //
     private String title;
     private String description;
     private String rules;
