@@ -1,7 +1,7 @@
 package org.example.Controllers;
 
 import org.example.Entities.Challenge;
-import org.example.Services.ChallengeService;
+import org.example.Service.ChallengeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

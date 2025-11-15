@@ -1,4 +1,4 @@
-package org.example.Services;
+package org.example.Service;
 
 import org.example.Entities.Challenge;
 import org.example.Repositories.ChallengeRepository;
@@ -36,4 +36,6 @@ public class ChallengeService {
     public void deleteChallenge(Long id) {
         challengeRepository.deleteById(id);
     }
+
+
 }

@@ -2,6 +2,9 @@ package org.example.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -15,11 +18,11 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer score;
+    private Double score;
     private String feedback;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date submissionDate;
+    private LocalDateTime submissionDate;
 
     private String fileName;
     private String fileExtension;

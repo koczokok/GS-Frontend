@@ -1,10 +1,12 @@
 package org.example.Controllers;
 
 import org.example.Entities.Submission;
-import org.example.Services.SubmissionService;
+import org.example.Service.SubmissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -40,8 +42,8 @@ public class SubmissionController {
     }
 
     @PostMapping
-    public Submission createSubmission(@RequestBody Submission submission) {
-        return submissionService.saveSubmission(submission);
+    public Submission createSubmission(@RequestParam("file") MultipartFile file, @RequestParam("id") Long challengeId) throws IOException {
+        return submissionService.handleSubmission(file, challengeId);
     }
 
     @DeleteMapping("/{id}")
