@@ -18,7 +18,11 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-
+    @Column(nullable = true)
+    private boolean isProfileCompleted;
     private String team;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
 }
 
