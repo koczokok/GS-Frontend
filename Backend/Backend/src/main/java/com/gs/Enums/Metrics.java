@@ -1,4 +1,4 @@
-package org.example.Enums;
+package com.gs.Enums;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
