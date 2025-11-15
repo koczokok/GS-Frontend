@@ -200,6 +200,9 @@ node_modules
 # Environment variables
 # Allow example files first (negation must come before broader patterns)
 !.env.example
+!.env.dev
+!.env.dev.example
+!.env.prod.example
 !.env.local.example
 !.env.development.example
 !.env.test.example
@@ -290,6 +293,7 @@ docker-compose.override.yml
 docker-compose.*.yml
 !docker-compose.yml
 !docker-compose.dev.yml
+!docker-compose.prod.yml
 
 # Database
 *.db
