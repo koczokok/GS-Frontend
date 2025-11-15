@@ -2,6 +2,7 @@ package com.gs.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.Date;
 
 @Entity
@@ -16,6 +17,7 @@ public class Challenge {
     private Long id;
 
     private String title;
+
     @Column(columnDefinition = "TEXT")
     private String description;
     @Column(columnDefinition = "TEXT")
@@ -23,4 +25,7 @@ public class Challenge {
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date deadline;
+
+    private String metric;
+    private byte[] groundSourceFile;
 }
