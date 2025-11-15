@@ -16,7 +16,7 @@ public class UserProfile {
 
     private String bio;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

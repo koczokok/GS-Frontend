@@ -54,7 +54,13 @@ public class UserController {
                     request.email()
             );
 
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.ok(Map.of(
+                    "id", user.getId(),
+                    "email", user.getEmail(),
+                    "provider", user.getProviderId(),
+                    "profileCompleted", user.isProfileCompleted(), // Add this
+                    "requiresProfileCompletion", !user.isProfileCompleted() // Add this
+            ));
 
         } catch (IllegalStateException e) {
 
