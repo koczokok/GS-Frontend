@@ -40,8 +40,8 @@ public class SubmissionController {
     }
 
     @PostMapping
-    public Submission createSubmission(@RequestBody Submission submission) {
-        return submissionService.saveSubmission(submission);
+    public Submission createSubmission(@RequestParam("file") MultipartFile file, @RequestParam("id") Long challengeId) throws IOException {
+        return submissionService.handleSubmission(file, challengeId);
     }
 
     @DeleteMapping("/{id}")
